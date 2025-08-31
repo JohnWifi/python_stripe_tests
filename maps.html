@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Propiedades</title>
+    <!-- Carga de Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <!-- Carga de Tailwind CSS para el diseño -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+        }
+        #map-container {
+            width: 100%;
+            height: 80vh; /* Altura del 80% del viewport para el mapa */
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden; /* Para que el radio de borde funcione */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
+
+    <!-- Contenedor principal de la aplicación -->
+    <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-4xl border border-gray-200">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Casas Disponibles</h1>
+            <p class="text-gray-500 mt-2">Explora las propiedades en el mapa</p>
+        </div>
+
+        <!-- Contenedor del mapa -->
+        <div id="map-container">
+            <div id="map" class="w-full h-full"></div>
+        </div>
+
+        <!-- Área para mostrar mensajes o el resultado -->
+        <div id="result-message" class="mt-6 p-4 rounded-lg bg-gray-100 text-gray-700 border border-gray-300 text-sm hidden">
+            <!-- Los mensajes se mostrarán aquí -->
+        </div>
+    </div>
+
+    <!-- Carga de Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        window.onload = function() {
+            // Obtener referencias a los elementos del DOM
+            const resultMessageDiv = document.getElementById('result-message');
+            // URL base de tu servidor Flask
+            const housesUrl = 'https://johnyidontknow3.pythonanywhere.com/houses'; 
+
+            /**
+             * Función para mostrar un mensaje en el área de resultados.
+             * @param {string} message El mensaje a mostrar.
+             * @param {string} type El tipo de mensaje ('success', 'error', 'info').
+             */
+            function showMessage(message, type = 'info') {
+                resultMessageDiv.textContent = message;
+                resultMessageDiv.classList.remove('hidden');
+                resultMessageDiv.classList.add('block');
+                resultMessageDiv.className = 'mt-6 p-4 rounded-lg text-sm transition-all duration-300 ease-in-out transform';
+
+                if (type === 'success') {
+                    resultMessageDiv.classList.add('bg-green-100', 'text-green-700', 'border-green-400');
+                } else if (type === 'error') {
+                    resultMessageDiv.classList.add('bg-red-100', 'text-red-700', 'border-red-400');
+                } else {
+                    resultMessageDiv.classList.add('bg-gray-100', 'text-gray-700', 'border-gray-300');
+                }
+            }
+
+            // Inicializar el mapa
+            const map = L.map('map').setView([19.4326, -99.1332], 13); // Centrado en la Ciudad de México por defecto
+
+            // Añadir una capa de mapa de OpenStreetMap
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+
+            /**
+             * Función para obtener las casas del servidor y mostrarlas en el mapa.
+             */
+            async function getHouses() {
+                try {
+                    showMessage('Cargando propiedades...', 'info');
+                    const response = await fetch(housesUrl);
+                    
+                    if (!response.ok) {
+                        throw new Error(`Error del servidor: ${response.statusText}`);
+                    }
+
+                    const houses = await response.json();
+
+                    if (houses.length === 0) {
+                        showMessage('No hay propiedades registradas aún.', 'info');
+                    } else {
+                        // Limpiar mensajes anteriores
+                        resultMessageDiv.classList.add('hidden');
+                        
+                        // Iterar sobre las casas y agregar marcadores al mapa
+                        houses.forEach(house => {
+                            // Convertir los valores de latitud y longitud a números
+                            const lat = parseFloat(house.LAT);
+                            const lon = parseFloat(house.LON);
+
+                            if (!isNaN(lat) && !isNaN(lon)) {
+                                const marker = L.marker([lat, lon]).addTo(map)
+                                    .bindPopup(`<b>${house.NAME}</b><br>${house.DIRECTION}`);
+                            } else {
+                                console.error(`Datos de latitud/longitud inválidos para la casa: ${house.NAME}`);
+                            }
+                        });
+                    }
+
+                } catch (error) {
+                    console.error('Error al obtener las casas:', error);
+                    showMessage(`Error al cargar las propiedades: ${error.message}`, 'error');
+                }
+            }
+
+            // Llamar a la función para cargar las casas cuando se cargue la página
+            getHouses();
+        };
+    </script>
+</body>
+</html>
+
+

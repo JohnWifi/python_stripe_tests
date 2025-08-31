@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Propiedad</title>
+    <!-- Carga de Tailwind CSS desde CDN para estilos modernos y responsive -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos personalizados para la fuente y el fondo */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Color de fondo suave */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Contenedor principal de la aplicación -->
+    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-200">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Bienvenido</h1>
+            <p class="text-gray-500 mt-2">REGISTRA UNA NUEVA PROPIEDAD</p>
+        </div>
+
+        <!-- Formulario de registro de propiedad -->
+        <div class="space-y-6">
+            <!-- Campo de nombre de la propiedad -->
+            <div>
+                <label for="house-name" class="block text-sm font-medium text-gray-700 mb-1">Nombre de la propiedad</label>
+                <input type="text" id="house-name" placeholder="Ingresa el nombre de la propiedad" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+            </div>
+            
+            <!-- Campo de dirección de la propiedad -->
+            <div>
+                <label for="house-address" class="block text-sm font-medium text-gray-700 mb-1">Dirección de la propiedad</label>
+                <input type="text" id="house-address" placeholder="Ingresa la dirección de la propiedad" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+            </div>
+
+            <!-- Campo de longitud -->
+            <div>
+                <label for="longitude" class="block text-sm font-medium text-gray-700 mb-1">Longitud</label>
+                <input type="text" id="longitude" placeholder="Ingresa la longitud" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+            </div>
+
+            <!-- Campo de latitud -->
+            <div>
+                <label for="latitude" class="block text-sm font-medium text-gray-700 mb-1">Latitud</label>
+                <input type="text" id="latitude" placeholder="Ingresa la latitud" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+            </div>
+
+            <!-- Botón de registrar propiedad -->
+            <button id="register-house-button" class="w-full bg-blue-600 text-white font-semibold py-2.5 rounded-lg shadow-md hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 focus:outline-none transition-all duration-300 ease-in-out transform hover:scale-105">
+                Registrar propiedad
+            </button>
+        </div>
+
+        <!-- Área para mostrar mensajes o el resultado -->
+        <div id="result-message" class="mt-6 p-4 rounded-lg bg-gray-100 text-gray-700 border border-gray-300 text-sm hidden">
+            <!-- Los mensajes de la aplicación se mostrarán aquí -->
+        </div>
+
+    </div>
+
+    <script>
+        // Obtener referencias a los elementos del DOM
+        const houseNameInput = document.getElementById('house-name');
+        const houseAddressInput = document.getElementById('house-address');
+        const longitudeInput = document.getElementById('longitude');
+        const latitudeInput = document.getElementById('latitude');
+        const registerHouseButton = document.getElementById('register-house-button');
+        const resultMessageDiv = document.getElementById('result-message');
+        
+        // URL de tu servidor Flask para el registro de casas (debes cambiarla a tu URL real)
+        const registerHouseUrl = '/register_house';
+
+        /**
+         * Función para mostrar un mensaje en el área de resultados.
+         * @param {string} message El mensaje a mostrar.
+         * @param {string} type El tipo de mensaje ('success', 'error', 'info').
+         */
+        function showMessage(message, type = 'info') {
+            resultMessageDiv.textContent = message;
+            resultMessageDiv.classList.remove('hidden');
+            resultMessageDiv.classList.add('block');
+            resultMessageDiv.className = 'mt-6 p-4 rounded-lg text-sm transition-all duration-300 ease-in-out transform';
+
+            if (type === 'success') {
+                resultMessageDiv.classList.add('bg-green-100', 'text-green-700', 'border-green-400');
+            } else if (type === 'error') {
+                resultMessageDiv.classList.add('bg-red-100', 'text-red-700', 'border-red-400');
+            } else {
+                resultMessageDiv.classList.add('bg-gray-100', 'text-gray-700', 'border-gray-300');
+            }
+        }
+
+        /**
+         * Función que se ejecuta al hacer clic en el botón de registro de propiedad.
+         */
+        async function handleRegisterHouseClick() {
+            // Obtener el ID del arrendador de localStorage
+            const landLordId = localStorage.getItem('landLordId');
+
+            if (!landLordId) {
+                showMessage('No se pudo encontrar el ID del arrendador. Por favor, inicia sesión de nuevo.', 'error');
+                console.error('Error: No se encontró el ID del arrendador en localStorage.');
+                return;
+            }
+
+            const name = houseNameInput.value;
+            const address = houseAddressInput.value;
+            const lon = longitudeInput.value;
+            const lat = latitudeInput.value;
+
+            // Validación básica de los campos
+            if (name.trim() === '' || address.trim() === '' || lon.trim() === '' || lat.trim() === '') {
+                showMessage('Por favor, completa todos los campos para registrar la propiedad.', 'error');
+                return;
+            }
+            
+            // Datos de la casa para enviar al servidor
+            const houseData = {
+                'name': name,
+                'ADDRESS': address,
+                'lon': lon,
+                'LAT': lat,
+                'LAND_LORD_ID': landLordId
+            };
+
+            try {
+                // Realizar la solicitud POST al servidor Flask
+                const response = await fetch('https://johnyidontknow3.pythonanywhere.com/register_house', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(houseData),
+                });
+
+                if (response.ok) {
+                    const responseText = await response.text();
+                    if (responseText === 'success') {
+                        showMessage('¡Propiedad registrada exitosamente!', 'success');
+                        // Opcional: limpiar los campos después del registro exitoso
+                        houseNameInput.value = '';
+                        houseAddressInput.value = '';
+                        longitudeInput.value = '';
+                        latitudeInput.value = '';
+						window.open('maps.html', '_blank')
+                    } else {
+                        console.error('Respuesta inesperada del servidor:', responseText);
+                        showMessage(`Error al registrar: ${responseText}`, 'error');
+                    }
+                } else {
+                    console.error('Error en el registro de la propiedad:', response.statusText);
+                    showMessage(`Error al registrar la propiedad: ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error de red:', error);
+                showMessage('No se pudo conectar con el servidor. Por favor, verifica tu conexión.', 'error');
+            }
+        }
+
+        // Asignar el evento 'click' al botón de registro de propiedad
+        registerHouseButton.addEventListener('click', handleRegisterHouseClick);
+    </script>
+</body>
+</html>

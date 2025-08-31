@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplicación de Registro</title>
+    <!-- Carga de Tailwind CSS desde CDN para estilos modernos y responsive -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos personalizados para la fuente y el fondo */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Color de fondo suave */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Contenedor principal de la aplicación -->
+    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-200">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Registro de Usuarios</h1>
+            <p class="text-gray-500 mt-2">Crea una cuenta para continuar</p>
+        </div>
+
+        <!-- Formulario de registro -->
+        <div class="space-y-6">
+            <!-- Campo de nombre de usuario -->
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Nombre de usuario</label>
+                <input type="text" id="username" placeholder="Ingresa tu nombre de usuario" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+            </div>
+            
+            <!-- Campo de contraseña -->
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                <input type="password" id="password" placeholder="Ingresa tu contraseña" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+            </div>
+
+            <!-- Opciones de rol (radio buttons) -->
+            <div class="flex space-x-4 items-center justify-center pt-2">
+                <div class="flex items-center">
+                    <input type="radio" id="radio-user" name="role" value="user" checked class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                    <label for="radio-user" class="ml-2 text-sm font-medium text-gray-700">Usuario</label>
+                </div>
+                <div class="flex items-center">
+                    <input type="radio" id="radio-landlord" name="role" value="land_lord" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                    <label for="radio-landlord" class="ml-2 text-sm font-medium text-gray-700">Arrendador</label>
+                </div>
+            </div>
+
+            <!-- Botón de registrarse -->
+            <button id="register-button" class="w-full bg-blue-600 text-white font-semibold py-2.5 rounded-lg shadow-md hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 focus:outline-none transition-all duration-300 ease-in-out transform hover:scale-105">
+                Registrarse
+            </button>
+        </div>
+
+        <!-- Área para mostrar mensajes o el resultado -->
+        <div id="result-message" class="mt-6 p-4 rounded-lg bg-gray-100 text-gray-700 border border-gray-300 text-sm hidden">
+            <!-- Los mensajes de la aplicación se mostrarán aquí -->
+        </div>
+
+    </div>
+
+    <script>
+        // Obtener referencias a los elementos del DOM
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const userRadio = document.getElementById('radio-user');
+        const landlordRadio = document.getElementById('radio-landlord');
+        const registerButton = document.getElementById('register-button');
+        const resultMessageDiv = document.getElementById('result-message');
+
+        // URL de tu servidor Flask para el registro (debes cambiarla a tu URL real)
+        const registerUrl = 'https://johnyidontknow3.pythonanywhere.com/register';
+
+        /**
+         * Función para mostrar un mensaje en el área de resultados.
+         * @param {string} message El mensaje a mostrar.
+         * @param {string} type El tipo de mensaje ('success', 'error', 'info').
+         */
+        function showMessage(message, type = 'info') {
+            resultMessageDiv.textContent = message;
+            resultMessageDiv.classList.remove('hidden');
+            resultMessageDiv.classList.add('block');
+            resultMessageDiv.className = 'mt-6 p-4 rounded-lg text-sm transition-all duration-300 ease-in-out transform';
+
+            if (type === 'success') {
+                resultMessageDiv.classList.add('bg-green-100', 'text-green-700', 'border-green-400');
+            } else if (type === 'error') {
+                resultMessageDiv.classList.add('bg-red-100', 'text-red-700', 'border-red-400');
+            } else {
+                resultMessageDiv.classList.add('bg-gray-100', 'text-gray-700', 'border-gray-300');
+            }
+        }
+
+        /**
+         * Función que se ejecuta al hacer clic en el botón de registro.
+         */
+        async function handleRegisterClick() {
+            const username = usernameInput.value;
+            const password = passwordInput.value;
+            const role = userRadio.checked ? userRadio.value : landlordRadio.value;
+
+            // Validación básica de los campos
+            if (username.trim() === '' || password.trim() === '') {
+                showMessage('Por favor, ingresa tu nombre de usuario y contraseña.', 'error');
+                return;
+            }
+            
+            // Datos del usuario para enviar al servidor
+            const userData = {
+                name: username,
+                password: password,
+                role: role
+            };
+
+            try {
+                // Realizar la solicitud POST al servidor Flask
+                const response = await fetch(registerUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData),
+                });
+
+                if (response.ok) {
+                    const responseData = await response.json();
+                    console.log('Registro exitoso:', responseData);
+                    
+                    // Verificar si el usuario es un arrendador para guardar el ID y redirigir
+                    if (role === 'land_lord' && responseData.length > 0) {
+                        const newUserId = responseData[0].id; // Asume que el ID se llama 'id'
+                        // Guardar el ID en localStorage para pasarlo a la siguiente página
+                        localStorage.setItem('landLordId', newUserId);
+                        
+                        showMessage('¡Registro exitoso! Redirigiendo a la página de registro de propiedades...', 'success');
+                        
+                        // Redirigir al usuario a la página de registro de propiedades
+                        setTimeout(() => {
+                            window.location.href = 'registro2.html';
+                        }, 2000); // Redirige después de 2 segundos
+                    } else {
+                        showMessage('¡Registro exitoso! Ya puedes iniciar sesión como usuario normal.', 'success');
+                        // No redirigir para los usuarios normales
+                    }
+                } else {
+                    const errorData = await response.json();
+                    console.error('Error en el registro:', errorData);
+                    showMessage(`Error en el registro: ${errorData.message || 'Inténtalo de nuevo.'}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error de red:', error);
+                showMessage('No se pudo conectar con el servidor. Por favor, verifica tu conexión.', 'error');
+            }
+        }
+
+        // Asignar el evento 'click' al botón
+        registerButton.addEventListener('click', handleRegisterClick);
+
+    </script>
+</body>
+</html>
+
